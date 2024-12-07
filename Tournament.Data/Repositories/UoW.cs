@@ -13,6 +13,8 @@ namespace Tournament.Data.Repositories
         private readonly TournamentApiContext _context;
         public ITournamentRepository  TournamentRepository { get; }
         public IGameRepository GameRepository { get; }
+
+
         public UoW(TournamentApiContext context)
         {
            _context = context;

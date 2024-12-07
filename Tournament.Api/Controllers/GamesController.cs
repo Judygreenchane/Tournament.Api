@@ -2,11 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Tournament.Data.Data;
+using Tournament.Core.DTO;
 using Tournament.Core.Entities;
+using Tournament.Core.Repositories;
+using Tournament.Data.Data;
+
 
 namespace Tournament.Api.Controllers
 {
@@ -14,55 +18,89 @@ namespace Tournament.Api.Controllers
     [ApiController]
     public class GamesController : ControllerBase
     {
-        private readonly TournamentApiContext _context;
+       // private readonly TournamentApiContext _context;
+        private readonly IUoW uow;
 
-        public GamesController(TournamentApiContext context)
+        private readonly IMapper _mapper;
+
+        public GamesController( IUoW unitOfWork, IMapper mapper)
         {
-            _context = context;
+          //  _context = context;
+            uow = unitOfWork;
+            _mapper = mapper;
         }
 
         // GET: api/Games
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Game>>> GetGame()
+        public async Task<ActionResult<IEnumerable<GameDto>>> GetGame()
         {
-            return await _context.Game.ToListAsync();
+            //var games = await _context.Games.ToListAsync();
+
+            var games = await uow.GameRepository.GetAllAsync();
+
+            if (games == null)
+            {
+                return NotFound(new { Message = $"Games not found." });
+            }
+
+            var gameDtos = _mapper.Map<IEnumerable<GameDto>>(games);
+
+            return Ok(gameDtos);
         }
 
         // GET: api/Games/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Game>> GetGame(int id)
+        public async Task<ActionResult<GameDto>> GetGame(int id)
         {
-            var game = await _context.Game.FindAsync(id);
+            // var game = await _context.Game.FindAsync(id);
+
+            var game = await uow.GameRepository.GetAsync(id);
 
             if (game == null)
             {
-                return NotFound();
+                return NotFound(new { Message = $"Game with ID {id} not found." });
             }
 
-            return game;
-        }
+            var gameDtos = _mapper.Map<GameDto>(game);
+            gameDtos.StartDate = game.Time;
 
+            return Ok(gameDtos);
+        }
         // PUT: api/Games/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutGame(int id, Game game)
+        public async Task<IActionResult> PutGame(int id, GameUpdateDto gameUpdateDto)
         {
-            if (id != game.Id)
+            if (id != gameUpdateDto.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(game).State = EntityState.Modified;
+            //_context.Entry(game).State = EntityState.Modified; //Old version
+
+            var existingGame = await uow.GameRepository.GetAsync(id);
+            if (existingGame == null)
+            {
+                return NotFound(new { Message = $"Game with ID {id} not found." });
+            }
 
             try
             {
-                await _context.SaveChangesAsync();
+                //await _context.SaveChangesAsync();//Old version
+                existingGame.Title = gameUpdateDto.Title;
+                existingGame.Time = gameUpdateDto.StartDate;
+                existingGame.TournamentDetailsId = gameUpdateDto.TournamentDetailsId;
+
+                _mapper.Map(gameUpdateDto, existingGame);
+
+                uow.GameRepository.Update(existingGame);
+                await uow.CompleteAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
-                if (!GameExists(id))
+                if (await GameExists(id) == false)
                 {
-                    return NotFound();
+                    return StatusCode(500, new { Message = "An error occurred while updating the game.", Details = ex.Message });
                 }
                 else
                 {
@@ -72,14 +110,20 @@ namespace Tournament.Api.Controllers
 
             return NoContent();
         }
-
         // POST: api/Games
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Game>> PostGame(Game game)
+        public async Task<ActionResult<Game>> PostGame(GameCreateDto gameCreateDto)
         {
-            _context.Game.Add(game);
-            await _context.SaveChangesAsync();
+            if (gameCreateDto == null)
+            {
+                return BadRequest(new { Message = "Invalid tournament data." });
+            }
+
+            var game = _mapper.Map<Game>(gameCreateDto);
+
+            uow.GameRepository.Add(game);
+            await uow.CompleteAsync();
 
             return CreatedAtAction("GetGame", new { id = game.Id }, game);
         }
@@ -88,21 +132,27 @@ namespace Tournament.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteGame(int id)
         {
-            var game = await _context.Game.FindAsync(id);
+            //var game = await _context.Game.FindAsync(id);
+            var game = await uow.GameRepository.GetAsync(id);
             if (game == null)
             {
-                return NotFound();
+                return NotFound(new { Message = $"Game with ID {id} not found." });
             }
 
-            _context.Game.Remove(game);
-            await _context.SaveChangesAsync();
+            //_context.Games.Remove(game);
+            //await _context.SaveChangesAsync(); //Old version
+
+            uow.GameRepository.Remove(game);
+            await uow.CompleteAsync();
 
             return NoContent();
         }
 
-        private bool GameExists(int id)
+        private Task<bool> GameExists(int id)
         {
-            return _context.Game.Any(e => e.Id == id);
+            //return _context.Games.Any(e => e.Id == id); // Old version
+
+            return uow.GameRepository.AnyAsync(id);
         }
     }
 }

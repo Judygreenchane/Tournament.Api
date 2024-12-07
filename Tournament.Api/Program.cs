@@ -24,6 +24,9 @@ namespace Tournament.Api
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            //Auto mapper
+            builder.Services.AddAutoMapper(typeof(TournamentMappings));
+
             builder.Services.AddScoped<IUoW,UoW>();
 
             var app = builder.Build();
