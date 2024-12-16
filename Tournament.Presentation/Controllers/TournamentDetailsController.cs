@@ -6,26 +6,25 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using NuGet.Protocol.Core.Types;
-using Tournament.Data.Data;
+
 using Tournament.Core.Entities;
 using Tournament.Core.Repositories;
 using AutoMapper;
 using Tournament.Core.Domain.Models.DTO;
+using Microsoft.EntityFrameworkCore;
 
-namespace Tournament.Api.Controllers
+namespace Tournament.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class TournamentDetailsController : ControllerBase
     {
-       // private readonly TournamentApiContext _context;
+        // private readonly TournamentApiContext _context;
         private readonly IUoW uow;
         private readonly IMapper _mapper;
-        public TournamentDetailsController( IUoW uow, IMapper mapper)
+        public TournamentDetailsController(IUoW uow, IMapper mapper)
         {
-           // _context = context;
+            // _context = context;
             this.uow = uow;
             _mapper = mapper;
         }
@@ -74,7 +73,7 @@ namespace Tournament.Api.Controllers
             {
                 return BadRequest(new { Message = "ID mismatch." });
             }
-           
+
             var existingTournament = await uow.TournamentRepository.GetAsync(id);
             if (existingTournament == null)
             {

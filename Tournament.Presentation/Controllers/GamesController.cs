@@ -9,23 +9,23 @@ using Microsoft.EntityFrameworkCore;
 using Tournament.Core.Domain.Models.DTO;
 using Tournament.Core.Entities;
 using Tournament.Core.Repositories;
-using Tournament.Data.Data;
 
 
-namespace Tournament.Api.Controllers
+
+namespace Tournament.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class GamesController : ControllerBase
     {
-       // private readonly TournamentApiContext _context;
+        // private readonly TournamentApiContext _context;
         private readonly IUoW uow;
 
         private readonly IMapper _mapper;
 
-        public GamesController( IUoW unitOfWork, IMapper mapper)
+        public GamesController(IUoW unitOfWork, IMapper mapper)
         {
-          //  _context = context;
+            //  _context = context;
             uow = unitOfWork;
             _mapper = mapper;
         }

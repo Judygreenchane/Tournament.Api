@@ -5,16 +5,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Tournament.Core.DTO
+namespace Tournament.Core.Domain.Models.DTO
 {
     public class TournamentCreateDto
     {
-        
-            [Required]
-            public string Title { get; set; }
 
-            [Required]
-            public DateTime StartDate { get; set; }
-        
+        [Required]
+        public string Title { get; set; }
+
+        [Required]
+        public DateTime StartDate { get; set; }
+
     }
 }

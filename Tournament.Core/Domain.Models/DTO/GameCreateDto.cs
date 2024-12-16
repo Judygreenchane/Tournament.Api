@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Tournament.Core.DTO
+namespace Tournament.Core.Domain.Models.DTO
 {
-    public  class GameCreateDto
+    public class GameCreateDto
     {
         [Required]
         public string Title { get; set; }
